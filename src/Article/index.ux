@@ -1,0 +1,150 @@
+<template >
+
+  <!-- <refresh  @refresh="show(this)"> -->
+    <list class="page" @scrollbottom="onScrollBottom">
+
+
+        <list-item  type="resultItem"class="resultItem" for="(resultIndex,resultItem) in results" @click="loadUrl(resultItem.url)">
+
+          <div if="{{resultItem.images != null}}">
+              <image src="{{resultItem.images[0]}}" />
+          </div>
+
+            <!-- <image src="{{resultItem.images[0]}}" resize-mode='stretch'/> -->
+            <!-- <text> {{resultItem.who}}</text>
+            <text> {{resultItem.desc}}</text> -->
+            <text class="resultItemDesc" >{{resultItem.desc}}</text>
+            <div class="line"></div>
+            <div class="resultItemInfo">
+              <text class="resultItemWho">{{resultItem.who}}</text>
+              <text class="resultItemPublishcedAt">{{resultItem.publishedAt}}</text>
+            </div>
+        </list-itemv>
+
+
+    </list>
+  <!-- </refresh> -->
+</template>
+
+
+<style lang="less" >
+
+@resultItemColor:#efefef;
+@resultItemBGColor:#ff534d;
+@primaryColor:darken(@resultItemBGColor, 10%);
+
+.page {
+  flex-direction: column;
+  justify-content: center;
+
+  background-color: @primaryColor;
+  /* align-items: center; */
+}
+
+.line{
+
+  height: 2px;
+  width: 80%;
+  background-color: @resultItemColor;
+}
+.line2{
+
+  height: 20px;
+  width: 80%;
+  background-color: @resultItemColor;
+}
+
+.resultItem{
+  padding: 8px;
+  margin: 16px;
+  flex-direction: column;
+  background-color:@resultItemBGColor;
+}
+.resultItemDesc{
+  text-align: left;
+  padding-top: 8px;
+  color: @resultItemColor;
+}
+.resultItemInfo {
+  padding-top: 10px;
+
+  text{
+    width:50%;
+    color: @resultItemColor;
+
+  }
+}
+
+.resultItemWho{
+  font-weight: bold;
+  font-size: 48px;
+}
+
+.resultItemPublishcedAt{
+  font-size: 24px;
+}
+
+</style>
+<script>
+
+const webview = require('@system.webview')
+const prompt = require('@system.prompt')
+const fetch = require('@system.fetch')
+import router from '@system.router'
+
+export default{
+    protected:{
+      data:'',
+      results :[],
+      page:0,
+      size:'',
+      type:''
+    },
+    onInit(){
+      //this.data = 'data'
+      this.data = JSON.parse(this.data)
+      this.results = this.data.results
+
+      this.$page.setTitleBar({
+        text:this.type+'|'+this.page
+      })
+    },
+    loadUrl(lurl){
+      console.info("loadUrl "+lurl)
+      webview.loadUrl({
+        url: lurl
+      })
+    },
+    fetchArticle(type,size,page){
+
+            fetch.fetch({
+              url:'http://gank.io/api/data/'+type+'/'+size+'/'+page,
+              success:function(re){
+                router.push({
+                  uri:'/Article',
+                  params:{
+                    data:JSON.parse(re.data),
+                    type:type,
+                    page:Number.parseInt(page),
+                    size:size
+                  }
+                })
+              },
+              fail: function (data, code) {
+                  prompt.showToast({
+                    message:data
+                  })
+              }
+            })
+    },
+    onScrollBottom(){
+      let nextPage = Number.parseInt(this.page)+1
+
+      this.fetchArticle(this.type,this.size,(nextPage))
+    },
+    onMenuPress() {
+      this.$app.$def.showMenu()
+    }
+
+  }
+</script>
